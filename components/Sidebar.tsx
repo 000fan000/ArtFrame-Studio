@@ -1,9 +1,10 @@
 import React from 'react';
-import { Layers, Maximize2, Palette, Image as ImageIcon, Sparkles } from 'lucide-react';
-import { FrameConfig, MatConfig, WallConfig, FrameStyle, WallStyle } from '../types';
+import { Layers, Maximize2, Palette, Image as ImageIcon, Sparkles, Plus, Trash2, Star, Save } from 'lucide-react';
+import { FrameConfig, MatConfig, WallConfig, FrameStyle, WallStyle, ThemePreset } from '../types';
 import { FRAME_STYLES, WALL_STYLES, PRESET_MAT_COLORS, THEME_PRESETS } from '../constants';
 import Slider from './Slider';
 import ColorPicker from './ColorPicker';
+import Button from './Button';
 
 interface SidebarProps {
   frameConfig: FrameConfig;
@@ -12,6 +13,13 @@ interface SidebarProps {
   setMatConfig: (c: MatConfig) => void;
   wallConfig: WallConfig;
   setWallConfig: (c: WallConfig) => void;
+  
+  // Theme Management
+  customThemes: ThemePreset[];
+  defaultThemeId: string | null;
+  onSaveTheme: (name: string) => void;
+  onDeleteTheme: (id: string) => void;
+  onSetDefaultTheme: (id: string) => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -21,17 +29,85 @@ const Sidebar: React.FC<SidebarProps> = ({
   setMatConfig,
   wallConfig,
   setWallConfig,
+  customThemes,
+  defaultThemeId,
+  onSaveTheme,
+  onDeleteTheme,
+  onSetDefaultTheme,
 }) => {
   const [activeTab, setActiveTab] = React.useState<'themes' | 'frame' | 'mat' | 'wall'>('themes');
+  
+  // State for inline naming form
+  const [isNaming, setIsNaming] = React.useState(false);
+  const [newName, setNewName] = React.useState('');
 
-  const applyTheme = (themeId: string) => {
-    const theme = THEME_PRESETS.find(t => t.id === themeId);
-    if (theme) {
-      setFrameConfig(theme.config.frame);
-      setMatConfig(theme.config.mat);
-      setWallConfig(theme.config.wall);
+  const applyTheme = (theme: ThemePreset) => {
+    // Deep copy configs when applying to break references from theme objects
+    setFrameConfig({ ...theme.config.frame });
+    setMatConfig({ ...theme.config.mat });
+    setWallConfig({ ...theme.config.wall });
+  };
+
+  const startSave = () => {
+    setNewName(`My Theme ${customThemes.length + 1}`);
+    setIsNaming(true);
+  };
+
+  const confirmSave = () => {
+    if (newName.trim()) {
+        onSaveTheme(newName.trim());
+        setIsNaming(false);
+        setNewName('');
     }
   };
+
+  const cancelSave = () => {
+      setIsNaming(false);
+      setNewName('');
+  };
+
+  const renderThemeItem = (theme: ThemePreset, isCustom: boolean) => (
+    <div
+      key={theme.id}
+      className="group w-full relative p-3 rounded-xl bg-gray-800 border border-gray-700 hover:border-blue-500 hover:bg-gray-800/80 transition-all mb-3"
+    >
+      <div 
+        className="flex items-center gap-4 cursor-pointer"
+        onClick={() => applyTheme(theme)}
+      >
+        <div 
+          className="w-12 h-12 rounded-lg shadow-md border border-gray-600 flex-shrink-0"
+          style={{ background: theme.previewColor }}
+        />
+        <div className="flex-1 min-w-0">
+          <h4 className="text-sm font-semibold text-gray-200 group-hover:text-blue-400 transition-colors truncate pr-8">
+            {theme.label}
+          </h4>
+          <p className="text-xs text-gray-400 leading-tight mt-1 truncate">{theme.description}</p>
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="absolute top-3 right-3 flex items-center gap-1">
+        <button
+            title={defaultThemeId === theme.id ? "Current Default" : "Set as Default"}
+            onClick={(e) => { e.stopPropagation(); onSetDefaultTheme(theme.id); }}
+            className={`p-1.5 rounded-full transition-colors ${defaultThemeId === theme.id ? 'text-yellow-400 bg-yellow-400/10' : 'text-gray-600 hover:text-yellow-400 hover:bg-gray-700'}`}
+        >
+            <Star size={14} fill={defaultThemeId === theme.id ? "currentColor" : "none"} />
+        </button>
+        {isCustom && (
+            <button
+                title="Delete Theme"
+                onClick={(e) => { e.stopPropagation(); if(confirm('Delete this theme?')) onDeleteTheme(theme.id); }}
+                className="p-1.5 rounded-full text-gray-600 hover:text-red-400 hover:bg-gray-700 transition-colors"
+            >
+                <Trash2 size={14} />
+            </button>
+        )}
+      </div>
+    </div>
+  );
 
   return (
     <div className="w-full md:w-80 bg-gray-900 border-r border-gray-800 flex flex-col h-full overflow-hidden shadow-2xl z-20">
@@ -73,26 +149,73 @@ const Sidebar: React.FC<SidebarProps> = ({
         
         {/* THEMES TAB */}
         {activeTab === 'themes' && (
-           <div className="space-y-4 animate-fade-in">
-             <div className="text-sm text-gray-400 mb-4">Select a preset theme to instantly frame your artwork.</div>
-             {THEME_PRESETS.map((theme) => (
-                <button
-                  key={theme.id}
-                  onClick={() => applyTheme(theme.id)}
-                  className="w-full text-left p-3 rounded-xl bg-gray-800 border border-gray-700 hover:border-blue-500 hover:bg-gray-800/80 transition-all group"
-                >
-                  <div className="flex items-center gap-4">
-                    <div 
-                      className="w-12 h-12 rounded-lg shadow-md border border-gray-600 flex-shrink-0"
-                      style={{ background: theme.previewColor }}
-                    />
-                    <div>
-                      <h4 className="text-sm font-semibold text-gray-200 group-hover:text-blue-400 transition-colors">{theme.label}</h4>
-                      <p className="text-xs text-gray-400 leading-tight mt-1">{theme.description}</p>
+           <div className="space-y-6 animate-fade-in">
+             <div className="bg-gray-800/50 p-4 rounded-xl border border-gray-700">
+                {!isNaming ? (
+                    <>
+                        <Button 
+                            type="button"
+                            variant="primary" 
+                            className="w-full justify-center" 
+                            onClick={startSave}
+                        >
+                            <Save size={16} className="mr-2" />
+                            Save Current Style
+                        </Button>
+                        <p className="text-xs text-gray-500 mt-2 text-center">Save current frame settings as a new theme.</p>
+                    </>
+                ) : (
+                    <div className="flex flex-col gap-3 animate-fade-in">
+                        <div className="flex flex-col gap-1">
+                            <label className="text-xs font-bold text-gray-400 uppercase">Theme Name</label>
+                            <input 
+                                type="text" 
+                                value={newName} 
+                                onChange={(e) => setNewName(e.target.value)}
+                                className="bg-gray-900 text-white text-sm rounded-lg border border-gray-700 p-2 focus:border-blue-500 focus:outline-none w-full"
+                                autoFocus
+                                placeholder="Enter name..."
+                                onKeyDown={(e) => {
+                                    if(e.key === 'Enter') confirmSave();
+                                    if(e.key === 'Escape') cancelSave();
+                                }}
+                            />
+                        </div>
+                        <div className="flex gap-2">
+                            <Button 
+                                type="button"
+                                variant="secondary" 
+                                className="flex-1 py-1 text-xs" 
+                                onClick={cancelSave}
+                            >
+                                Cancel
+                            </Button>
+                            <Button 
+                                type="button"
+                                variant="primary" 
+                                className="flex-1 py-1 text-xs" 
+                                onClick={confirmSave}
+                            >
+                                Save
+                            </Button>
+                        </div>
                     </div>
-                  </div>
-                </button>
-             ))}
+                )}
+             </div>
+
+             {/* Custom Themes */}
+             {customThemes.length > 0 && (
+                <div>
+                     <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 px-1">My Themes</h3>
+                     {customThemes.map(t => renderThemeItem(t, true))}
+                </div>
+             )}
+
+             {/* Preset Themes */}
+             <div>
+                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 px-1">Presets</h3>
+                {THEME_PRESETS.map(t => renderThemeItem(t, false))}
+             </div>
            </div>
         )}
 

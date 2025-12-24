@@ -14,40 +14,59 @@ import {
   WallConfig, 
   ArtState, 
   FrameStyle, 
-  WallStyle 
+  WallStyle,
+  ThemePreset
 } from './types';
-import { DEFAULT_FRAME_WIDTH, DEFAULT_MAT_WIDTH } from './constants';
+import { DEFAULT_FRAME_WIDTH, DEFAULT_MAT_WIDTH, THEME_PRESETS } from './constants';
 
 const App: React.FC = () => {
+  // --- Persistent State Handlers ---
+  
+  const loadCustomThemes = (): ThemePreset[] => {
+    if (typeof window === 'undefined') return [];
+    try {
+      return JSON.parse(localStorage.getItem('artframe_custom_themes') || '[]');
+    } catch { return []; }
+  };
+
+  const loadDefaultThemeId = (): string | null => {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem('artframe_default_theme_id');
+  };
+
   // --- State ---
+
+  const [customThemes, setCustomThemes] = useState<ThemePreset[]>(loadCustomThemes);
+  const [defaultThemeId, setDefaultThemeId] = useState<string | null>(loadDefaultThemeId);
+
+  // Initialize configs based on default theme if present
+  const getInitialConfig = () => {
+    const allThemes = [...THEME_PRESETS, ...customThemes];
+    const def = allThemes.find(t => t.id === defaultThemeId);
+    if (def) return def.config;
+    
+    return {
+      frame: { style: FrameStyle.MODERN_BLACK, width: DEFAULT_FRAME_WIDTH, color: '#000000', depth: 10 },
+      mat: { enabled: true, width: DEFAULT_MAT_WIDTH, color: '#FFFFFF', texture: 'SMOOTH' as const },
+      wall: { style: WallStyle.CONCRETE, color: '#E2E8F0' }
+    };
+  };
+
+  // We use a lazy initializer to only run this logic once on mount
+  const [configState] = useState(getInitialConfig);
+
+  const [frameConfig, setFrameConfig] = useState<FrameConfig>(configState.frame);
+  const [matConfig, setMatConfig] = useState<MatConfig>(configState.mat);
+  const [wallConfig, setWallConfig] = useState<WallConfig>(configState.wall);
+
   const [art, setArt] = useState<ArtState>({
     image: null,
     fileName: 'artwork',
     rotation: 0,
   });
   
-  // Store original image for non-destructive re-cropping
   const [originalImage, setOriginalImage] = useState<string | null>(null);
   const [isCropping, setIsCropping] = useState(false);
-
-  const [frameConfig, setFrameConfig] = useState<FrameConfig>({
-    style: FrameStyle.MODERN_BLACK,
-    width: DEFAULT_FRAME_WIDTH,
-    color: '#000000',
-    depth: 10,
-  });
-
-  const [matConfig, setMatConfig] = useState<MatConfig>({
-    enabled: true,
-    width: DEFAULT_MAT_WIDTH,
-    color: '#FFFFFF',
-    texture: 'SMOOTH',
-  });
-
-  const [wallConfig, setWallConfig] = useState<WallConfig>({
-    style: WallStyle.CONCRETE,
-    color: '#E2E8F0',
-  });
 
   const captureRef = useRef<HTMLDivElement>(null);
 
@@ -62,7 +81,7 @@ const App: React.FC = () => {
         fileName: file.name.split('.')[0],
         rotation: 0,
       });
-      setOriginalImage(result); // Save original for cropping
+      setOriginalImage(result);
     };
     reader.readAsDataURL(file);
   }, []);
@@ -73,7 +92,7 @@ const App: React.FC = () => {
     try {
       const canvas = await html2canvas(captureRef.current, {
         backgroundColor: null,
-        scale: 2, // Reting quality
+        scale: 2,
       });
       
       const link = document.createElement('a');
@@ -94,6 +113,73 @@ const App: React.FC = () => {
   const resetArt = () => {
       setArt({ image: null, fileName: '', rotation: 0 });
       setOriginalImage(null);
+  };
+
+  // --- Theme Handlers ---
+
+  const handleSaveTheme = (name: string) => {
+    // Determine a preview color based on frame style
+    let previewColor = '#1a1a1a';
+    const styleStr = frameConfig.style.toString();
+
+    if (frameConfig.style === FrameStyle.CUSTOM_COLOR) previewColor = frameConfig.color;
+    else if (styleStr.includes('GOLD')) previewColor = '#C5A059';
+    else if (styleStr.includes('WOOD') || styleStr.includes('WALNUT')) previewColor = '#d4b08c'; // Handle Walnut
+    else if (styleStr.includes('WHITE')) previewColor = '#f8fafc';
+    else if (styleStr.includes('SILVER')) previewColor = '#C0C0C0';
+
+    const newTheme: ThemePreset = {
+        id: `custom_${Date.now()}`,
+        label: name,
+        description: 'Custom user theme',
+        previewColor,
+        // Deep copy the configs to ensure we don't hold references to mutable state
+        config: { 
+            frame: { ...frameConfig }, 
+            mat: { ...matConfig }, 
+            wall: { ...wallConfig } 
+        }
+    };
+
+    const updated = [newTheme, ...customThemes];
+    setCustomThemes(updated);
+    
+    try {
+        localStorage.setItem('artframe_custom_themes', JSON.stringify(updated));
+    } catch (e) {
+        console.error("Failed to save theme to local storage", e);
+        // We do not alert here to avoid spamming the user if quota is full, 
+        // as the state still updates in the current session.
+    }
+  };
+
+  const handleDeleteTheme = (id: string) => {
+    const updated = customThemes.filter(t => t.id !== id);
+    setCustomThemes(updated);
+    try {
+        localStorage.setItem('artframe_custom_themes', JSON.stringify(updated));
+        
+        if (defaultThemeId === id) {
+            setDefaultThemeId(null);
+            localStorage.removeItem('artframe_default_theme_id');
+        }
+    } catch (e) {
+        console.error("Failed to update storage", e);
+    }
+  };
+
+  const handleSetDefaultTheme = (id: string) => {
+    try {
+        if (defaultThemeId === id) {
+            setDefaultThemeId(null);
+            localStorage.removeItem('artframe_default_theme_id');
+        } else {
+            setDefaultThemeId(id);
+            localStorage.setItem('artframe_default_theme_id', id);
+        }
+    } catch (e) {
+         console.error("Failed to set default theme", e);
+    }
   };
 
   // --- Render ---
@@ -162,6 +248,12 @@ const App: React.FC = () => {
                 setMatConfig={setMatConfig}
                 wallConfig={wallConfig}
                 setWallConfig={setWallConfig}
+                // Theme Props
+                customThemes={customThemes}
+                defaultThemeId={defaultThemeId}
+                onSaveTheme={handleSaveTheme}
+                onDeleteTheme={handleDeleteTheme}
+                onSetDefaultTheme={handleSetDefaultTheme}
             />
 
             {/* Canvas Area */}

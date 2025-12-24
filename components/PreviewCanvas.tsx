@@ -22,7 +22,8 @@ const PreviewCanvas: React.FC<PreviewCanvasProps> = ({
   
   const getFrameBackground = () => {
     if (frameConfig.style === FrameStyle.CUSTOM_COLOR) return frameConfig.color;
-    return currentFrameStyle?.gradient || currentFrameStyle?.color || '#000';
+    // Fallback to black if style not found, ensuring a valid string is always returned
+    return currentFrameStyle?.gradient || currentFrameStyle?.color || '#000000';
   };
 
   const getWallBackground = () => {
@@ -41,6 +42,10 @@ const PreviewCanvas: React.FC<PreviewCanvasProps> = ({
     ? `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E"), linear-gradient(${matConfig.color}, ${matConfig.color})`
     : matConfig.color;
 
+  // Simplified background logic: use 'background' for both solid colors and gradients
+  // This prevents issues where switching between background-color and background-image causes rendering glitches
+  const frameBackground = getFrameBackground();
+
   return (
     <div 
         className="flex-1 w-full h-full relative overflow-hidden flex items-center justify-center p-8 transition-colors duration-500"
@@ -53,9 +58,7 @@ const PreviewCanvas: React.FC<PreviewCanvasProps> = ({
                 className="relative transition-all duration-300 ease-out"
                 style={{
                     boxShadow: dropShadow,
-                    // The Frame Container
-                    backgroundColor: getFrameBackground().includes('gradient') ? undefined : getFrameBackground(),
-                    background: getFrameBackground().includes('gradient') ? getFrameBackground() : undefined,
+                    background: frameBackground,
                     padding: `${frameConfig.width}px`,
                     position: 'relative',
                     // Optional: Add a subtle border radius if frame style dictates, but frames are usually sharp
