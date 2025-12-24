@@ -1,0 +1,5 @@
+{
+  "name": "ArtFrame Studio",
+  "description": "A sophisticated web application for visualizing artwork with customizable frames, mats, and wall textures. Upload your art and design the perfect framing in real-time.",
+  "requestFramePermissions": []
+}
