@@ -1,4 +1,4 @@
-import { FrameStyle, WallStyle } from './types';
+import { FrameStyle, WallStyle, ThemePreset } from './types';
 
 export const DEFAULT_FRAME_WIDTH = 40;
 export const DEFAULT_MAT_WIDTH = 50;
@@ -27,4 +27,62 @@ export const PRESET_MAT_COLORS = [
   '#808080', // Grey
   '#2a3b55', // Navy
   '#5c1a1a', // Deep Red
+];
+
+export const THEME_PRESETS: ThemePreset[] = [
+  {
+    id: 'gallery_classic',
+    label: 'Gallery Classic',
+    description: 'Timeless black frame with a crisp white mat.',
+    previewColor: '#1a1a1a',
+    config: {
+      frame: { style: FrameStyle.MODERN_BLACK, width: 45, color: '#000000', depth: 12 },
+      mat: { enabled: true, width: 60, color: '#FFFFFF', texture: 'SMOOTH' },
+      wall: { style: WallStyle.SOLID_COLOR, color: '#E2E8F0' }
+    }
+  },
+  {
+    id: 'modern_minimal',
+    label: 'Modern Minimal',
+    description: 'Sleek oak wood on a concrete texture.',
+    previewColor: '#d4b08c',
+    config: {
+      frame: { style: FrameStyle.OAK_WOOD, width: 20, color: '#000000', depth: 8 },
+      mat: { enabled: true, width: 80, color: '#FFFFFF', texture: 'SMOOTH' },
+      wall: { style: WallStyle.CONCRETE, color: '#E2E8F0' }
+    }
+  },
+  {
+    id: 'museum_gold',
+    label: 'Museum Gold',
+    description: 'Ornate gold frame with a textured beige mat.',
+    previewColor: '#C5A059',
+    config: {
+      frame: { style: FrameStyle.GOLD_ORNATE, width: 60, color: '#000000', depth: 20 },
+      mat: { enabled: true, width: 50, color: '#F5F5DC', texture: 'TEXTURED' },
+      wall: { style: WallStyle.DARK_MODE, color: '#000000' }
+    }
+  },
+  {
+    id: 'industrial_loft',
+    label: 'Industrial Loft',
+    description: 'Metallic frame against a white brick wall.',
+    previewColor: '#C0C0C0',
+    config: {
+      frame: { style: FrameStyle.SILVER_METAL, width: 15, color: '#000000', depth: 15 },
+      mat: { enabled: true, width: 40, color: '#1a1a1a', texture: 'SMOOTH' },
+      wall: { style: WallStyle.BRICK_WHITE, color: '#ffffff' }
+    }
+  },
+  {
+    id: 'studio_dark',
+    label: 'Studio Dark',
+    description: 'Dark walnut frame in a moody environment.',
+    previewColor: '#5D4037',
+    config: {
+      frame: { style: FrameStyle.DARK_WALNUT, width: 40, color: '#000000', depth: 15 },
+      mat: { enabled: false, width: 0, color: '#000000', texture: 'SMOOTH' },
+      wall: { style: WallStyle.DARK_MODE, color: '#000000' }
+    }
+  },
 ];

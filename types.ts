@@ -39,3 +39,15 @@ export interface ArtState {
   fileName: string;
   rotation: number;
 }
+
+export interface ThemePreset {
+  id: string;
+  label: string;
+  description: string;
+  previewColor: string; 
+  config: {
+    frame: FrameConfig;
+    mat: MatConfig;
+    wall: WallConfig;
+  }
+}

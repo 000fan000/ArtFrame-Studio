@@ -1,7 +1,7 @@
 import React from 'react';
-import { Layers, Maximize2, Palette, Image as ImageIcon } from 'lucide-react';
+import { Layers, Maximize2, Palette, Image as ImageIcon, Sparkles } from 'lucide-react';
 import { FrameConfig, MatConfig, WallConfig, FrameStyle, WallStyle } from '../types';
-import { FRAME_STYLES, WALL_STYLES, PRESET_MAT_COLORS } from '../constants';
+import { FRAME_STYLES, WALL_STYLES, PRESET_MAT_COLORS, THEME_PRESETS } from '../constants';
 import Slider from './Slider';
 import ColorPicker from './ColorPicker';
 
@@ -22,13 +22,29 @@ const Sidebar: React.FC<SidebarProps> = ({
   wallConfig,
   setWallConfig,
 }) => {
-  const [activeTab, setActiveTab] = React.useState<'frame' | 'mat' | 'wall'>('frame');
+  const [activeTab, setActiveTab] = React.useState<'themes' | 'frame' | 'mat' | 'wall'>('themes');
+
+  const applyTheme = (themeId: string) => {
+    const theme = THEME_PRESETS.find(t => t.id === themeId);
+    if (theme) {
+      setFrameConfig(theme.config.frame);
+      setMatConfig(theme.config.mat);
+      setWallConfig(theme.config.wall);
+    }
+  };
 
   return (
     <div className="w-full md:w-80 bg-gray-900 border-r border-gray-800 flex flex-col h-full overflow-hidden shadow-2xl z-20">
       
       {/* Tabs */}
       <div className="flex border-b border-gray-800">
+        <button
+          onClick={() => setActiveTab('themes')}
+          className={`flex-1 py-4 flex flex-col items-center justify-center gap-1 text-xs font-medium transition-colors ${activeTab === 'themes' ? 'text-blue-400 bg-gray-800/50 border-b-2 border-blue-400' : 'text-gray-500 hover:text-gray-300'}`}
+        >
+          <Sparkles size={18} />
+          Themes
+        </button>
         <button
           onClick={() => setActiveTab('frame')}
           className={`flex-1 py-4 flex flex-col items-center justify-center gap-1 text-xs font-medium transition-colors ${activeTab === 'frame' ? 'text-blue-400 bg-gray-800/50 border-b-2 border-blue-400' : 'text-gray-500 hover:text-gray-300'}`}
@@ -55,6 +71,31 @@ const Sidebar: React.FC<SidebarProps> = ({
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-gray-700">
         
+        {/* THEMES TAB */}
+        {activeTab === 'themes' && (
+           <div className="space-y-4 animate-fade-in">
+             <div className="text-sm text-gray-400 mb-4">Select a preset theme to instantly frame your artwork.</div>
+             {THEME_PRESETS.map((theme) => (
+                <button
+                  key={theme.id}
+                  onClick={() => applyTheme(theme.id)}
+                  className="w-full text-left p-3 rounded-xl bg-gray-800 border border-gray-700 hover:border-blue-500 hover:bg-gray-800/80 transition-all group"
+                >
+                  <div className="flex items-center gap-4">
+                    <div 
+                      className="w-12 h-12 rounded-lg shadow-md border border-gray-600 flex-shrink-0"
+                      style={{ background: theme.previewColor }}
+                    />
+                    <div>
+                      <h4 className="text-sm font-semibold text-gray-200 group-hover:text-blue-400 transition-colors">{theme.label}</h4>
+                      <p className="text-xs text-gray-400 leading-tight mt-1">{theme.description}</p>
+                    </div>
+                  </div>
+                </button>
+             ))}
+           </div>
+        )}
+
         {/* FRAME CONTROLS */}
         {activeTab === 'frame' && (
           <div className="space-y-8 animate-fade-in">
