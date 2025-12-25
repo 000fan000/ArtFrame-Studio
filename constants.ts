@@ -1,7 +1,7 @@
 import { FrameStyle, WallStyle, ThemePreset } from './types';
 
-export const DEFAULT_FRAME_WIDTH = 40;
-export const DEFAULT_MAT_WIDTH = 50;
+export const DEFAULT_FRAME_WIDTH = 20;
+export const DEFAULT_MAT_WIDTH = 40;
 
 export const FRAME_STYLES = [
   { id: FrameStyle.MODERN_BLACK, label: 'Modern Black', color: '#1a1a1a', gradient: null },
@@ -14,10 +14,12 @@ export const FRAME_STYLES = [
 ];
 
 export const WALL_STYLES = [
+  { id: WallStyle.LIVING_ROOM, label: 'Living Room', css: 'url("https://images.unsplash.com/photo-1615873968403-89e068628260?q=80&w=2000&auto=format&fit=crop")' },
   { id: WallStyle.SOLID_COLOR, label: 'Solid Color', css: '' },
   { id: WallStyle.CONCRETE, label: 'Concrete', css: 'url("https://www.transparenttextures.com/patterns/concrete-wall.png")' },
   { id: WallStyle.BRICK_WHITE, label: 'White Brick', css: 'url("https://www.transparenttextures.com/patterns/white-brick-wall.png")' },
   { id: WallStyle.DARK_MODE, label: 'Dark Studio', css: 'linear-gradient(to bottom, #1a202c, #2d3748)' },
+  { id: WallStyle.CUSTOM_IMAGE, label: 'Custom Image', css: '' },
 ];
 
 export const PRESET_MAT_COLORS = [
@@ -36,9 +38,9 @@ export const THEME_PRESETS: ThemePreset[] = [
     description: 'Timeless black frame with a crisp white mat.',
     previewColor: '#1a1a1a',
     config: {
-      frame: { style: FrameStyle.MODERN_BLACK, width: 45, color: '#000000', depth: 12 },
-      mat: { enabled: true, width: 60, color: '#FFFFFF', texture: 'SMOOTH' },
-      wall: { style: WallStyle.SOLID_COLOR, color: '#E2E8F0' }
+      frame: { style: FrameStyle.MODERN_BLACK, width: 25, color: '#000000', depth: 12 },
+      mat: { enabled: true, width: 50, color: '#FFFFFF', texture: 'SMOOTH' },
+      wall: { style: WallStyle.SOLID_COLOR, color: '#E2E8F0', scale: 1.0, position: { x: 0, y: 0 } }
     }
   },
   {
@@ -47,9 +49,9 @@ export const THEME_PRESETS: ThemePreset[] = [
     description: 'Sleek oak wood on a concrete texture.',
     previewColor: '#d4b08c',
     config: {
-      frame: { style: FrameStyle.OAK_WOOD, width: 20, color: '#000000', depth: 8 },
-      mat: { enabled: true, width: 80, color: '#FFFFFF', texture: 'SMOOTH' },
-      wall: { style: WallStyle.CONCRETE, color: '#E2E8F0' }
+      frame: { style: FrameStyle.OAK_WOOD, width: 15, color: '#000000', depth: 8 },
+      mat: { enabled: true, width: 60, color: '#FFFFFF', texture: 'SMOOTH' },
+      wall: { style: WallStyle.CONCRETE, color: '#E2E8F0', scale: 1.0, position: { x: 0, y: 0 } }
     }
   },
   {
@@ -58,9 +60,9 @@ export const THEME_PRESETS: ThemePreset[] = [
     description: 'Ornate gold frame with a textured beige mat.',
     previewColor: '#C5A059',
     config: {
-      frame: { style: FrameStyle.GOLD_ORNATE, width: 60, color: '#000000', depth: 20 },
-      mat: { enabled: true, width: 50, color: '#F5F5DC', texture: 'TEXTURED' },
-      wall: { style: WallStyle.DARK_MODE, color: '#000000' }
+      frame: { style: FrameStyle.GOLD_ORNATE, width: 45, color: '#000000', depth: 20 },
+      mat: { enabled: true, width: 40, color: '#F5F5DC', texture: 'TEXTURED' },
+      wall: { style: WallStyle.DARK_MODE, color: '#000000', scale: 1.0, position: { x: 0, y: 0 } }
     }
   },
   {
@@ -69,9 +71,9 @@ export const THEME_PRESETS: ThemePreset[] = [
     description: 'Metallic frame against a white brick wall.',
     previewColor: '#C0C0C0',
     config: {
-      frame: { style: FrameStyle.SILVER_METAL, width: 15, color: '#000000', depth: 15 },
-      mat: { enabled: true, width: 40, color: '#1a1a1a', texture: 'SMOOTH' },
-      wall: { style: WallStyle.BRICK_WHITE, color: '#ffffff' }
+      frame: { style: FrameStyle.SILVER_METAL, width: 12, color: '#000000', depth: 15 },
+      mat: { enabled: true, width: 35, color: '#1a1a1a', texture: 'SMOOTH' },
+      wall: { style: WallStyle.BRICK_WHITE, color: '#ffffff', scale: 1.0, position: { x: 0, y: 0 } }
     }
   },
   {
@@ -80,9 +82,9 @@ export const THEME_PRESETS: ThemePreset[] = [
     description: 'Dark walnut frame in a moody environment.',
     previewColor: '#5D4037',
     config: {
-      frame: { style: FrameStyle.DARK_WALNUT, width: 40, color: '#000000', depth: 15 },
+      frame: { style: FrameStyle.DARK_WALNUT, width: 25, color: '#000000', depth: 15 },
       mat: { enabled: false, width: 0, color: '#000000', texture: 'SMOOTH' },
-      wall: { style: WallStyle.DARK_MODE, color: '#000000' }
+      wall: { style: WallStyle.DARK_MODE, color: '#000000', scale: 1.0, position: { x: 0, y: 0 } }
     }
   },
 ];

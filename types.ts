@@ -13,6 +13,8 @@ export enum WallStyle {
   CONCRETE = 'CONCRETE',
   BRICK_WHITE = 'BRICK_WHITE',
   DARK_MODE = 'DARK_MODE',
+  LIVING_ROOM = 'LIVING_ROOM',
+  CUSTOM_IMAGE = 'CUSTOM_IMAGE',
 }
 
 export interface FrameConfig {
@@ -32,6 +34,9 @@ export interface MatConfig {
 export interface WallConfig {
   style: WallStyle;
   color: string; // for solid color
+  image?: string; // Data URL for custom uploaded background
+  scale: number; // Visual scale of the art on the wall (0.1 - 2.0)
+  position: { x: number; y: number }; // Offset in pixels from center
 }
 
 export interface ArtState {

@@ -7,6 +7,7 @@ import PreviewCanvas from './components/PreviewCanvas';
 import UploadZone from './components/UploadZone';
 import ImageCropper from './components/ImageCropper';
 import Button from './components/Button';
+import DownloadModal from './components/DownloadModal';
 
 import { 
   FrameConfig, 
@@ -48,7 +49,8 @@ const App: React.FC = () => {
     return {
       frame: { style: FrameStyle.MODERN_BLACK, width: DEFAULT_FRAME_WIDTH, color: '#000000', depth: 10 },
       mat: { enabled: true, width: DEFAULT_MAT_WIDTH, color: '#FFFFFF', texture: 'SMOOTH' as const },
-      wall: { style: WallStyle.CONCRETE, color: '#E2E8F0' }
+      // Default scale 0.4 works well for the wide-angle room background
+      wall: { style: WallStyle.LIVING_ROOM, color: '#E2E8F0', scale: 0.4, position: { x: 0, y: 0 } }
     };
   };
 
@@ -67,6 +69,10 @@ const App: React.FC = () => {
   
   const [originalImage, setOriginalImage] = useState<string | null>(null);
   const [isCropping, setIsCropping] = useState(false);
+  
+  // Download Modal State
+  const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const captureRef = useRef<HTMLDivElement>(null);
 
@@ -86,22 +92,51 @@ const App: React.FC = () => {
     reader.readAsDataURL(file);
   }, []);
 
-  const handleDownload = async () => {
+  const handleDownloadClick = () => {
+      setIsDownloadModalOpen(true);
+  };
+
+  const handleDownloadProcess = async (option: 'screen' | 'original') => {
     if (!captureRef.current) return;
+    setIsDownloading(true);
     
+    // Allow UI to update before blocking with heavy canvas work
+    await new Promise(resolve => setTimeout(resolve, 100));
+
     try {
+      let scale = 2; // Default "Screen" quality (Retina-ish)
+
+      if (option === 'original') {
+        const imgElement = captureRef.current.querySelector('img');
+        if (imgElement && imgElement.naturalWidth) {
+           const renderedWidth = imgElement.getBoundingClientRect().width;
+           if (renderedWidth > 0) {
+               const ratio = imgElement.naturalWidth / renderedWidth;
+               scale = Math.min(Math.max(2, ratio), 20); 
+           }
+        }
+      }
+
       const canvas = await html2canvas(captureRef.current, {
         backgroundColor: null,
-        scale: 2,
+        scale: scale,
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
       });
       
       const link = document.createElement('a');
-      link.download = `framed-${art.fileName}.png`;
+      const suffix = option === 'original' ? 'high-res' : 'framed';
+      link.download = `${art.fileName}-${suffix}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
+      
+      setIsDownloadModalOpen(false);
     } catch (err) {
       console.error("Download failed:", err);
       alert("Could not generate image. Please try again.");
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -118,13 +153,12 @@ const App: React.FC = () => {
   // --- Theme Handlers ---
 
   const handleSaveTheme = (name: string) => {
-    // Determine a preview color based on frame style
     let previewColor = '#1a1a1a';
     const styleStr = frameConfig.style.toString();
 
     if (frameConfig.style === FrameStyle.CUSTOM_COLOR) previewColor = frameConfig.color;
     else if (styleStr.includes('GOLD')) previewColor = '#C5A059';
-    else if (styleStr.includes('WOOD') || styleStr.includes('WALNUT')) previewColor = '#d4b08c'; // Handle Walnut
+    else if (styleStr.includes('WOOD') || styleStr.includes('WALNUT')) previewColor = '#d4b08c';
     else if (styleStr.includes('WHITE')) previewColor = '#f8fafc';
     else if (styleStr.includes('SILVER')) previewColor = '#C0C0C0';
 
@@ -133,7 +167,6 @@ const App: React.FC = () => {
         label: name,
         description: 'Custom user theme',
         previewColor,
-        // Deep copy the configs to ensure we don't hold references to mutable state
         config: { 
             frame: { ...frameConfig }, 
             mat: { ...matConfig }, 
@@ -148,8 +181,6 @@ const App: React.FC = () => {
         localStorage.setItem('artframe_custom_themes', JSON.stringify(updated));
     } catch (e) {
         console.error("Failed to save theme to local storage", e);
-        // We do not alert here to avoid spamming the user if quota is full, 
-        // as the state still updates in the current session.
     }
   };
 
@@ -221,7 +252,7 @@ const App: React.FC = () => {
             
             <div className="h-6 w-px bg-gray-700 mx-1"></div>
             
-            <Button variant="primary" onClick={handleDownload}>
+            <Button variant="primary" onClick={handleDownloadClick}>
               <Download size={18} className="mr-2" />
               Download
             </Button>
@@ -248,7 +279,6 @@ const App: React.FC = () => {
                 setMatConfig={setMatConfig}
                 wallConfig={wallConfig}
                 setWallConfig={setWallConfig}
-                // Theme Props
                 customThemes={customThemes}
                 defaultThemeId={defaultThemeId}
                 onSaveTheme={handleSaveTheme}
@@ -275,6 +305,14 @@ const App: React.FC = () => {
             onCropComplete={handleCropComplete}
           />
         )}
+
+        {/* Download Modal */}
+        <DownloadModal 
+            isOpen={isDownloadModalOpen}
+            onClose={() => setIsDownloadModalOpen(false)}
+            onConfirm={handleDownloadProcess}
+            isProcessing={isDownloading}
+        />
       </main>
     </div>
   );

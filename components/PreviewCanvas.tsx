@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { FrameConfig, MatConfig, WallConfig, ArtState, FrameStyle } from '../types';
+import { FrameConfig, MatConfig, WallConfig, ArtState, FrameStyle, WallStyle } from '../types';
 import { FRAME_STYLES, WALL_STYLES } from '../constants';
 
 interface PreviewCanvasProps {
@@ -22,15 +22,39 @@ const PreviewCanvas: React.FC<PreviewCanvasProps> = ({
   
   const getFrameBackground = () => {
     if (frameConfig.style === FrameStyle.CUSTOM_COLOR) return frameConfig.color;
-    // Fallback to black if style not found, ensuring a valid string is always returned
     return currentFrameStyle?.gradient || currentFrameStyle?.color || '#000000';
   };
 
-  const getWallBackground = () => {
+  const getWallStyles = () => {
+    const baseStyles: React.CSSProperties = {
+      backgroundSize: 'cover',
+      backgroundPosition: 'center center',
+      backgroundRepeat: 'no-repeat',
+      transition: 'background-color 0.5s ease, background-image 0.5s ease',
+    };
+
+    // Priority 1: Custom Image Upload
+    if (wallConfig.style === WallStyle.CUSTOM_IMAGE && wallConfig.image) {
+        return { ...baseStyles, backgroundImage: `url("${wallConfig.image}")` };
+    }
+
+    // Priority 2: Standard Styles
     const style = WALL_STYLES.find(s => s.id === wallConfig.style);
-    if (!style) return '#e2e8f0';
-    if (wallConfig.style === 'SOLID_COLOR') return wallConfig.color;
-    return style.css; // Usually a URL or gradient
+    
+    if (wallConfig.style === WallStyle.SOLID_COLOR) {
+        return { ...baseStyles, backgroundColor: wallConfig.color, backgroundImage: 'none' };
+    }
+
+    if (!style) return { ...baseStyles, backgroundColor: '#e2e8f0' };
+
+    // Handle gradients (Dark Studio) or url() patterns
+    if (style.css.includes('gradient')) {
+        return { ...baseStyles, backgroundImage: style.css };
+    } else if (style.css.includes('url')) {
+        return { ...baseStyles, backgroundImage: style.css };
+    }
+    
+    return baseStyles;
   };
 
   // Determine shadow intensity based on depth
@@ -42,28 +66,26 @@ const PreviewCanvas: React.FC<PreviewCanvasProps> = ({
     ? `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E"), linear-gradient(${matConfig.color}, ${matConfig.color})`
     : matConfig.color;
 
-  // Simplified background logic: use 'background' for both solid colors and gradients
-  // This prevents issues where switching between background-color and background-image causes rendering glitches
   const frameBackground = getFrameBackground();
+  const posX = wallConfig.position?.x || 0;
+  const posY = wallConfig.position?.y || 0;
 
   return (
     <div 
-        className="flex-1 w-full h-full relative overflow-hidden flex items-center justify-center p-8 transition-colors duration-500"
-        style={{ background: getWallBackground(), backgroundSize: 'cover' }}
+        className="flex-1 w-full h-full relative overflow-hidden flex items-center justify-center p-8"
+        style={getWallStyles()}
     >
         {/* Render Area */}
         {art.image ? (
             <div 
                 ref={captureRef}
-                className="relative transition-all duration-300 ease-out"
+                className="relative transition-all duration-300 ease-out origin-center"
                 style={{
+                    transform: `translate(${posX}px, ${posY}px) scale(${wallConfig.scale})`,
                     boxShadow: dropShadow,
                     background: frameBackground,
                     padding: `${frameConfig.width}px`,
                     position: 'relative',
-                    // Optional: Add a subtle border radius if frame style dictates, but frames are usually sharp
-                    maxWidth: '90%',
-                    maxHeight: '90%',
                 }}
             >
                  {/* Bevel Overlay for Frame */}
@@ -88,10 +110,13 @@ const PreviewCanvas: React.FC<PreviewCanvasProps> = ({
                     <img 
                         src={art.image} 
                         alt="Framed Art"
-                        className="block max-w-full max-h-[70vh] w-auto h-auto object-contain shadow-sm"
+                        className="block w-auto h-auto object-contain shadow-sm"
                         style={{
-                           // If mat is disabled, the art sits directly in frame, maybe needs a tiny shadow
-                           boxShadow: !matConfig.enabled ? '0 0 5px rgba(0,0,0,0.5)' : 'none'
+                           maxHeight: '60vh', 
+                           maxWidth: '60vw',  
+                           boxShadow: !matConfig.enabled ? '0 0 5px rgba(0,0,0,0.5)' : 'none',
+                           transform: `rotate(${art.rotation}deg)`,
+                           transition: 'transform 0.3s ease-out'
                         }}
                     />
                     

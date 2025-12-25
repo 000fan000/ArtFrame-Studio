@@ -1,5 +1,5 @@
 import React from 'react';
-import { Layers, Maximize2, Palette, Image as ImageIcon, Sparkles, Plus, Trash2, Star, Save } from 'lucide-react';
+import { Layers, Maximize2, Palette, Image as ImageIcon, Sparkles, Plus, Trash2, Star, Save, Upload, ZoomIn, Move } from 'lucide-react';
 import { FrameConfig, MatConfig, WallConfig, FrameStyle, WallStyle, ThemePreset } from '../types';
 import { FRAME_STYLES, WALL_STYLES, PRESET_MAT_COLORS, THEME_PRESETS } from '../constants';
 import Slider from './Slider';
@@ -64,6 +64,21 @@ const Sidebar: React.FC<SidebarProps> = ({
   const cancelSave = () => {
       setIsNaming(false);
       setNewName('');
+  };
+
+  const handleWallImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setWallConfig({
+          ...wallConfig,
+          style: WallStyle.CUSTOM_IMAGE,
+          image: event.target?.result as string
+        });
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const renderThemeItem = (theme: ThemePreset, isCustom: boolean) => (
@@ -353,22 +368,102 @@ const Sidebar: React.FC<SidebarProps> = ({
                   <button
                     key={style.id}
                     onClick={() => setWallConfig({ ...wallConfig, style: style.id })}
-                    className={`flex flex-col items-center p-3 rounded-lg border-2 transition-all ${
+                    className={`flex flex-col items-center p-3 rounded-lg border-2 transition-all relative overflow-hidden ${
                       wallConfig.style === style.id 
                         ? 'border-blue-500 bg-gray-800' 
                         : 'border-gray-700 hover:border-gray-600 hover:bg-gray-800/50'
                     }`}
                   >
+                     {/* Preview for styles */}
                      <div 
                       className="w-full h-12 mb-2 rounded shadow-sm bg-cover bg-center" 
                       style={{ 
-                        background: style.css || '#e2e8f0',
+                        background: style.id === WallStyle.CUSTOM_IMAGE && wallConfig.image 
+                            ? `url(${wallConfig.image})` 
+                            : (style.css || (style.id === WallStyle.CUSTOM_IMAGE ? '#374151' : '#e2e8f0')),
+                        backgroundSize: 'cover'
                       }} 
-                    />
+                    >
+                        {style.id === WallStyle.CUSTOM_IMAGE && !wallConfig.image && (
+                            <div className="w-full h-full flex items-center justify-center text-gray-500">
+                                <ImageIcon size={20} />
+                            </div>
+                        )}
+                    </div>
                     <span className="text-xs text-center text-gray-300">{style.label}</span>
                   </button>
                 ))}
               </div>
+
+               <div className="mb-6 border-t border-gray-800 pt-6">
+                 <div className="flex items-center gap-2 mb-4 text-gray-400">
+                     <Move size={16} />
+                     <span className="text-xs font-bold uppercase tracking-wider">Placement</span>
+                 </div>
+                 
+                 <div className="space-y-2 mb-6">
+                     <Slider
+                        label="Scale"
+                        value={wallConfig.scale}
+                        min={0.1}
+                        max={2.0}
+                        step={0.05}
+                        unit="x"
+                        onChange={(scale) => setWallConfig({ ...wallConfig, scale })}
+                      />
+                 </div>
+
+                 <div className="space-y-2">
+                     <Slider
+                        label="Horizontal"
+                        value={wallConfig.position?.x || 0}
+                        min={-500}
+                        max={500}
+                        step={10}
+                        unit="px"
+                        onChange={(x) => setWallConfig({ ...wallConfig, position: { ...wallConfig.position, x } })}
+                      />
+                      <Slider
+                        label="Vertical"
+                        value={wallConfig.position?.y || 0}
+                        min={-500}
+                        max={500}
+                        step={10}
+                        unit="px"
+                        onChange={(y) => setWallConfig({ ...wallConfig, position: { ...wallConfig.position, y } })}
+                      />
+                      <button 
+                        onClick={() => setWallConfig({...wallConfig, position: { x: 0, y: 0 }})}
+                        className="text-xs text-blue-400 hover:text-blue-300 mt-1"
+                      >
+                        Reset Position
+                      </button>
+                 </div>
+              </div>
+
+              {/* Custom Image Upload */}
+              {wallConfig.style === WallStyle.CUSTOM_IMAGE && (
+                  <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700 animate-fade-in">
+                      <label className="block text-xs font-bold text-gray-400 uppercase mb-3">Upload Background</label>
+                      <button
+                        onClick={() => document.getElementById('wall-image-upload')?.click()}
+                        className="w-full flex items-center justify-center gap-2 bg-gray-700 hover:bg-gray-600 text-white py-3 rounded-lg transition-colors border border-gray-600 border-dashed"
+                      >
+                        <Upload size={16} />
+                        <span className="text-sm">Choose Image</span>
+                      </button>
+                      <input 
+                        id="wall-image-upload" 
+                        type="file" 
+                        accept="image/*"
+                        className="hidden" 
+                        onChange={handleWallImageUpload}
+                      />
+                      <p className="text-xs text-gray-500 mt-2 text-center">
+                        Upload a photo of your own room to see how the art looks on your wall.
+                      </p>
+                  </div>
+              )}
 
               {wallConfig.style === WallStyle.SOLID_COLOR && (
                 <ColorPicker
